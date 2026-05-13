@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}{{ job.company_name }} — LIhelper{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+  <a href="/" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+</div>
+
+<div class="row g-4">
+
+  <!-- Left column: job info -->
+  <div class="col-lg-8">
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+          <div>
+            <h4 class="mb-0">{{ job.job_title }}</h4>
+            <div class="text-secondary mt-1">{{ job.company_name }}</div>
+          </div>
+          <div class="text-end">
+            {% set score = job.match_score or 0 %}
+            {% if score >= 80 %}
+              <span class="badge bg-success fs-6">{{ score }}% match</span>
+            {% elif score >= 60 %}
+              <span class="badge bg-warning text-dark fs-6">{{ score }}% match</span>
+            {% else %}
+              <span class="badge bg-danger fs-6">{{ score }}% match</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <hr class="border-secondary">
+
+        <div class="row g-2 text-secondary small mb-3">
+          <div class="col-auto"><i class="bi bi-geo-alt me-1"></i>{{ job.location or '—' }}</div>
+          <div class="col-auto"><i class="bi bi-laptop me-1"></i>{{ job.remote_type or '—' }}</div>
+          <div class="col-auto"><i class="bi bi-cash me-1"></i>{{ job.salary_range or 'Salary not listed' }}</div>
+          <div class="col-auto"><i class="bi bi-calendar me-1"></i>Scraped {{ job.scraped_date[:10] if job.scraped_date else '—' }}</div>
+        </div>
+
+        <a href="{{ job.job_url }}" target="_blank" class="btn btn-sm btn-outline-primary me-2">
+          <i class="bi bi-linkedin me-1"></i>View on LinkedIn
+        </a>
+        {% if job.cv_version %}
+        <a href="/cv/{{ job.cv_version.split('\\')[-1].split('/')[-1] }}" class="btn btn-sm btn-outline-info">
+          <i class="bi bi-file-earmark-word me-1"></i>Download CV
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Claude analysis -->
+    {% if job.match_notes %}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">Claude analysis</div>
+      <div class="card-body">
+        <p class="mb-2">{{ job.match_notes }}</p>
+        {% if job.cv_changes %}
+        <hr class="border-secondary">
+        <div class="text-secondary small mb-1">CV changes made</div>
+        <div style="white-space:pre-wrap" class="small">{{ job.cv_changes }}</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Cover letter -->
+    {% if job.cover_letter %}
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary d-flex justify-content-between align-items-center">
+        <span class="text-secondary small">Cover letter</span>
+        <button class="btn btn-sm btn-outline-secondary py-0"
+                onclick="navigator.clipboard.writeText(document.getElementById('cover-letter-text').innerText);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">
+          Copy
+        </button>
+      </div>
+      <div class="card-body">
+        <div id="cover-letter-text" style="white-space:pre-wrap" class="small text-light">{{ job.cover_letter }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Job description -->
+    <div class="card bg-dark border-secondary">
+      <div class="card-header border-secondary text-secondary small">Job description</div>
+      <div class="card-body">
+        <div style="white-space:pre-wrap;max-height:400px;overflow-y:auto" class="small text-light">
+          {{ job.job_description or 'No description available.' }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column: status + notes -->
+  <div class="col-lg-4">
+
+    <!-- Status -->
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">Status</div>
+      <div class="card-body">
+        <select class="form-select form-select-sm mb-2" id="status-select">
+          {% for s in statuses %}
+          <option value="{{ s }}" {% if job.status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+        <div class="text-secondary small">
+          Applied: {{ job.applied_date[:10] if job.applied_date else '—' }}
+          {% if job.apply_method %} via {{ job.apply_method }}{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recruiter -->
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">Recruiter</div>
+      <div class="card-body">
+        <input type="text" class="form-control form-control-sm mb-2" id="recruiter-name"
+               placeholder="Name" value="{{ job.recruiter_name or '' }}">
+        <input type="text" class="form-control form-control-sm mb-2" id="recruiter-contact"
+               placeholder="Email / LinkedIn" value="{{ job.recruiter_contact or '' }}">
+        <input type="date" class="form-control form-control-sm" id="next-followup"
+               value="{{ job.next_followup_date[:10] if job.next_followup_date else '' }}">
+        <div class="text-secondary small mt-1">Follow-up date</div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card bg-dark border-secondary mb-3">
+      <div class="card-header border-secondary text-secondary small">Notes</div>
+      <div class="card-body">
+        <textarea class="form-control form-control-sm" id="notes" rows="5"
+                  placeholder="Your notes…">{{ job.notes or '' }}</textarea>
+      </div>
+    </div>
+
+    <button class="btn btn-primary w-100" onclick="saveAll()">
+      <i class="bi bi-floppy me-1"></i>Save changes
+    </button>
+    <div id="save-msg" class="text-success small text-center mt-2" style="display:none">Saved ✓</div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const JOB_ID = {{ job.id }};
+
+document.getElementById('status-select').onchange = async function() {
+  await fetch(`/api/jobs/${JOB_ID}/status`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({status: this.value}),
+  });
+};
+
+async function saveAll() {
+  await fetch(`/api/jobs/${JOB_ID}/notes`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      notes:              document.getElementById('notes').value,
+      recruiter_name:     document.getElementById('recruiter-name').value,
+      recruiter_contact:  document.getElementById('recruiter-contact').value,
+      next_followup_date: document.getElementById('next-followup').value,
+    }),
+  });
+  const msg = document.getElementById('save-msg');
+  msg.style.display = 'block';
+  setTimeout(() => msg.style.display = 'none', 2000);
+}
+</script>
+{% endblock %}

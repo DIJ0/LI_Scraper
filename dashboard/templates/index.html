@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — LIhelper{% endblock %}
+
+{% block content %}
+
+<!-- Stats row -->
+<div class="row g-3 mb-4" id="stats-row">
+  <div class="col-6 col-md-3">
+    <div class="card bg-dark border-secondary text-center py-3">
+      <div class="fs-2 fw-bold text-primary" id="stat-applied">—</div>
+      <div class="text-secondary small">Applied</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card bg-dark border-secondary text-center py-3">
+      <div class="fs-2 fw-bold text-warning" id="stat-interviews">—</div>
+      <div class="text-secondary small">Interviews</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card bg-dark border-secondary text-center py-3">
+      <div class="fs-2 fw-bold text-success" id="stat-offers">—</div>
+      <div class="text-secondary small">Offers</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card bg-dark border-secondary text-center py-3">
+      <div class="fs-2 fw-bold text-info" id="stat-response">—</div>
+      <div class="text-secondary small">Response rate</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab nav -->
+<ul class="nav nav-tabs mb-3" id="mainTabs">
+  <li class="nav-item">
+    <a class="nav-link active" data-bs-toggle="tab" href="#tab-kanban">
+      <i class="bi bi-kanban me-1"></i>Kanban
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="tab" href="#tab-table">
+      <i class="bi bi-table me-1"></i>Table
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="tab" href="#tab-stats">
+      <i class="bi bi-bar-chart me-1"></i>Stats
+    </a>
+  </li>
+</ul>
+
+<div class="tab-content">
+
+  <!-- ── Kanban ─────────────────────────────────────────────────────────── -->
+  <div class="tab-pane fade show active" id="tab-kanban">
+    <div class="kanban-board d-flex gap-3 overflow-auto pb-3">
+      {% for status in statuses %}
+      <div class="kanban-column flex-shrink-0">
+        <div class="kanban-column-header d-flex justify-content-between align-items-center mb-2 px-1">
+          <span class="fw-semibold">{{ status }}</span>
+          <span class="badge bg-secondary count-badge" id="count-{{ status | replace(' ', '-') }}">0</span>
+        </div>
+        <div class="kanban-cards" id="col-{{ status | replace(' ', '-') }}" data-status="{{ status }}">
+          <!-- cards injected by JS -->
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── Table ──────────────────────────────────────────────────────────── -->
+  <div class="tab-pane fade" id="tab-table">
+    <div class="d-flex gap-2 mb-3 flex-wrap">
+      <input type="text" id="table-filter" class="form-control form-control-sm w-auto"
+             placeholder="Filter by company or title…">
+      <select id="status-filter" class="form-select form-select-sm w-auto">
+        <option value="">All statuses</option>
+        {% for s in statuses %}
+        <option value="{{ s }}">{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-dark table-hover align-middle" id="jobs-table">
+        <thead class="table-secondary">
+          <tr>
+            <th>Company</th>
+            <th>Title</th>
+            <th>Score</th>
+            <th>Status</th>
+            <th>Location</th>
+            <th>Applied</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <!-- rows injected by JS -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Stats ──────────────────────────────────────────────────────────── -->
+  <div class="tab-pane fade" id="tab-stats">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="card bg-dark border-secondary p-3">
+          <h6 class="text-secondary mb-3">Applications by status</h6>
+          <canvas id="chart-status"></canvas>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card bg-dark border-secondary p-3">
+          <h6 class="text-secondary mb-3">Match score distribution</h6>
+          <canvas id="chart-scores"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const STATUSES = {{ statuses | tojson }};
+
+const scoreColor = s => s >= 80 ? '#198754' : s >= 60 ? '#ffc107' : '#dc3545';
+const scoreIcon  = s => s >= 80 ? '🟢' : s >= 60 ? '🟡' : '🔴';
+const fmtDate    = d => d ? d.slice(0, 10) : '—';
+
+async function loadJobs() {
+  const [jobs, stats] = await Promise.all([
+    fetch('/api/jobs').then(r => r.json()),
+    fetch('/api/stats').then(r => r.json()),
+  ]);
+
+  renderStats(stats, jobs);
+  renderKanban(jobs);
+  renderTable(jobs);
+  renderCharts(jobs, stats);
+}
+
+function renderStats(stats, jobs) {
+  const bs = stats.by_status || {};
+  const applied   = stats.total_applied || 0;
+  const interviews = (bs['Interview'] || 0);
+  const offers     = (bs['Offer'] || 0);
+  const responded  = interviews + offers + (bs['Rejected'] || 0) + (bs['Phone Screen'] || 0);
+  const rate       = applied > 0 ? Math.round(responded / applied * 100) : 0;
+
+  document.getElementById('stat-applied').textContent    = applied;
+  document.getElementById('stat-interviews').textContent = interviews;
+  document.getElementById('stat-offers').textContent     = offers;
+  document.getElementById('stat-response').textContent   = rate + '%';
+  document.getElementById('nav-stats').textContent       = `${applied} applications`;
+}
+
+function makeCard(job) {
+  const score = job.match_score || 0;
+  const cv    = job.cv_version ? `<a href="/cv/${encodeURIComponent(job.cv_version.split(/[/\\]/).pop())}" target="_blank" class="text-decoration-none me-2" title="Download CV"><i class="bi bi-file-earmark-word text-info"></i></a>` : '';
+  return `
+    <div class="kanban-card card bg-secondary border-0 mb-2 p-2" data-id="${job.id}" onclick="window.location='/jobs/${job.id}'">
+      <div class="d-flex justify-content-between align-items-start mb-1">
+        <span class="fw-semibold small text-truncate me-2">${job.company_name}</span>
+        <span class="badge" style="background:${scoreColor(score)};white-space:nowrap">${score}%</span>
+      </div>
+      <div class="text-light small text-truncate mb-1">${job.job_title}</div>
+      <div class="d-flex justify-content-between align-items-center mt-1">
+        <span class="text-secondary" style="font-size:.7rem">${fmtDate(job.applied_date || job.scraped_date)}</span>
+        <span>${cv}<i class="bi bi-box-arrow-up-right text-secondary" style="font-size:.7rem" onclick="event.stopPropagation();window.open('${job.job_url}','_blank')"></i></span>
+      </div>
+    </div>`;
+}
+
+function renderKanban(jobs) {
+  STATUSES.forEach(s => {
+    const col = document.getElementById(`col-${s.replace(/ /g, '-')}`);
+    const badge = document.getElementById(`count-${s.replace(/ /g, '-')}`);
+    let filtered = jobs.filter(j => j.status === s);
+
+    // hide low-score noise from Scraped column
+    if (s === 'Scraped') {
+      filtered = filtered.filter(j => (j.match_score || 0) >= 25);
+      filtered.sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+    }
+
+    col.innerHTML = filtered.map(makeCard).join('');
+    badge.textContent = filtered.length;
+
+    Sortable.create(col, {
+      group: 'kanban',
+      animation: 150,
+      onEnd: async evt => {
+        const id      = parseInt(evt.item.dataset.id);
+        const newStatus = evt.to.dataset.status;
+        await fetch(`/api/jobs/${id}/status`, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({status: newStatus}),
+        });
+        loadJobs();
+      }
+    });
+  });
+}
+
+function renderTable(jobs) {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = jobs.map(j => {
+    const score = j.match_score || 0;
+    return `<tr data-company="${j.company_name}" data-title="${j.job_title}" data-status="${j.status}">
+      <td>${j.company_name}</td>
+      <td>${j.job_title}</td>
+      <td><span class="badge" style="background:${scoreColor(score)}">${score}%</span></td>
+      <td><span class="badge bg-secondary">${j.status}</span></td>
+      <td class="text-secondary small">${j.location || '—'}</td>
+      <td class="text-secondary small">${fmtDate(j.applied_date)}</td>
+      <td><a href="/jobs/${j.id}" class="btn btn-sm btn-outline-secondary py-0">View</a></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('table-filter').oninput = filterTable;
+  document.getElementById('status-filter').onchange = filterTable;
+}
+
+function filterTable() {
+  const text   = document.getElementById('table-filter').value.toLowerCase();
+  const status = document.getElementById('status-filter').value;
+  document.querySelectorAll('#table-body tr').forEach(row => {
+    const matchText   = !text   || row.dataset.company.toLowerCase().includes(text) || row.dataset.title.toLowerCase().includes(text);
+    const matchStatus = !status || row.dataset.status === status;
+    row.style.display = matchText && matchStatus ? '' : 'none';
+  });
+}
+
+let chartStatus, chartScores;
+
+function renderCharts(jobs, stats) {
+  const bs = stats.by_status || {};
+  const labels = Object.keys(bs);
+  const values = Object.values(bs);
+
+  if (chartStatus) chartStatus.destroy();
+  chartStatus = new Chart(document.getElementById('chart-status'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: ['#0d6efd','#198754','#ffc107','#dc3545','#6c757d','#0dcaf0','#fd7e14'] }]
+    },
+    options: { plugins: { legend: { labels: { color: '#adb5bd' } } } }
+  });
+
+  const buckets = {'0-49': 0, '50-64': 0, '65-79': 0, '80-89': 0, '90-100': 0};
+  jobs.forEach(j => {
+    const s = j.match_score || 0;
+    if (s < 50) buckets['0-49']++;
+    else if (s < 65) buckets['50-64']++;
+    else if (s < 80) buckets['65-79']++;
+    else if (s < 90) buckets['80-89']++;
+    else buckets['90-100']++;
+  });
+
+  if (chartScores) chartScores.destroy();
+  chartScores = new Chart(document.getElementById('chart-scores'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(buckets),
+      datasets: [{
+        label: 'Jobs',
+        data: Object.values(buckets),
+        backgroundColor: ['#dc3545','#fd7e14','#ffc107','#20c997','#198754']
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#adb5bd' }, grid: { color: '#343a40' } },
+        y: { ticks: { color: '#adb5bd' }, grid: { color: '#343a40' } }
+      }
+    }
+  });
+}
+
+loadJobs();
+</script>
+{% endblock %}
