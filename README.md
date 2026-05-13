@@ -23,6 +23,25 @@ Automated LinkedIn job scraper, CV tailor, and application tracker. Runs on a sc
 
 ---
 
+## Screenshots
+
+### Kanban Board
+Track every job across statuses — Scraped, Applied, Phone Screen, Interview, Offer, Rejected. High-score cards surface at the top; low-score noise is filtered out automatically.
+
+![Kanban board](docs/screenshots/kanban.png)
+
+### Stats Tab
+Score distribution bar chart and application-by-status donut chart.
+
+![Stats tab](docs/screenshots/stats.png)
+
+### Job Detail Page
+Full Claude analysis, CV changes summary, one-click cover letter copy, recruiter tracker, and follow-up date.
+
+![Job detail page](docs/screenshots/job-detail.png)
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -127,13 +146,7 @@ Edit `config.py`:
 
 ### Add your CV
 
-Place your CV in DOCX format at:
-
-```
-cvs/Dima_Eidler_CV.docx
-```
-
-Or update `BASE_CV_PATH` in `config.py` to point to your file. The tool modifies only the **Summary** and **Core Skills** sections — everything else is preserved exactly as-is.
+Place your CV in DOCX format inside the `cvs/` folder, then update `BASE_CV_PATH` in `config.py` to point to it: The tool modifies only the **Summary** and **Core Skills** sections — everything else is preserved exactly as-is.
 
 ---
 
