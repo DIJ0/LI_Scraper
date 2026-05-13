@@ -40,6 +40,11 @@ Full Claude analysis, CV changes summary, one-click cover letter copy, recruiter
 
 ![Job detail page](docs/screenshots/job-detail.png)
 
+### Telegram Notifications
+Job alert with match score and analysis, tailored CV file attachment, and cover letter text — all sent directly to your Telegram bot.
+
+![Telegram notifications](docs/screenshots/Telegram.png)
+
 ---
 
 ## Tech Stack
