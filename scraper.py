@@ -35,13 +35,23 @@ async def _load_cookies(context: BrowserContext) -> bool:
         return False
 
 
+async def _human_type(page: Page, selector: str, text: str):
+    await page.click(selector)
+    for char in text:
+        await page.keyboard.type(char)
+        await asyncio.sleep(random.uniform(0.08, 0.22))
+        # occasional longer pause like a real typist hesitating
+        if random.random() < 0.1:
+            await asyncio.sleep(random.uniform(0.3, 0.6))
+
+
 async def _login(page: Page, context: BrowserContext):
     await page.goto(f"{LINKEDIN_HOME}/login", wait_until="domcontentloaded")
     await page.wait_for_selector("#username", timeout=30000)
     await _pause(1.0, 2.5)
-    await page.fill("#username", LINKEDIN_EMAIL)
-    await _pause(0.5, 1.5)
-    await page.fill("#password", LINKEDIN_PASSWORD)
+    await _human_type(page, "#username", LINKEDIN_EMAIL)
+    await _pause(0.8, 1.8)
+    await _human_type(page, "#password", LINKEDIN_PASSWORD)
     await _pause(0.8, 2.0)
     await page.click('[type="submit"]')
     await page.wait_for_url("**/feed/**", timeout=30000)
