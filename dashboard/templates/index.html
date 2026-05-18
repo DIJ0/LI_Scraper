@@ -87,10 +87,10 @@
           <tr>
             <th>Company</th>
             <th>Title</th>
-            <th>Score</th>
-            <th>Status</th>
+            <th style="cursor:pointer;white-space:nowrap" onclick="setSort('score')">Score <i id="sort-score" class="bi bi-arrow-down-up text-secondary small"></i></th>
+            <th style="cursor:pointer;white-space:nowrap" onclick="setSort('status')">Status <i id="sort-status" class="bi bi-arrow-down-up text-secondary small"></i></th>
             <th>Location</th>
-            <th>Applied</th>
+            <th style="cursor:pointer;white-space:nowrap" onclick="setSort('date')">Date <i id="sort-date" class="bi bi-arrow-down text-light small"></i></th>
             <th></th>
           </tr>
         </thead>
@@ -126,9 +126,48 @@
 <script>
 const STATUSES = {{ statuses | tojson }};
 
-const scoreColor = s => s >= 80 ? '#198754' : s >= 60 ? '#ffc107' : '#dc3545';
-const scoreIcon  = s => s >= 80 ? '🟢' : s >= 60 ? '🟡' : '🔴';
-const fmtDate    = d => d ? d.slice(0, 10) : '—';
+const scoreColor  = s => s >= 80 ? '#198754' : s >= 60 ? '#ffc107' : '#dc3545';
+const scoreIcon   = s => s >= 80 ? '🟢' : s >= 60 ? '🟡' : '🔴';
+const fmtDate     = d => d ? d.slice(0, 10) : '—';
+const statusColor = s => ({
+  'Applied':      'bg-primary',
+  'Phone Screen': 'bg-info text-dark',
+  'Interview':    'bg-warning text-dark',
+  'Offer':        'bg-success',
+  'Rejected':     'bg-secondary',
+  'Ghosted':      'bg-secondary',
+  'Archived':     'bg-danger',
+}[s] || 'bg-secondary');
+
+let allJobs = [];
+let sortCol = 'date', sortDir = -1;
+
+function sortedJobs(jobs) {
+  return [...jobs].sort((a, b) => {
+    let va, vb;
+    if      (sortCol === 'score')  { va = a.match_score || 0;    vb = b.match_score || 0; }
+    else if (sortCol === 'status') { va = a.status || '';         vb = b.status || ''; }
+    else                           { va = a.scraped_date || '';   vb = b.scraped_date || ''; }
+    return va < vb ? sortDir : va > vb ? -sortDir : 0;
+  });
+}
+
+function updateSortIcons() {
+  ['score', 'status', 'date'].forEach(col => {
+    const el = document.getElementById(`sort-${col}`);
+    if (!el) return;
+    el.className = col === sortCol
+      ? `bi ${sortDir === -1 ? 'bi-arrow-down' : 'bi-arrow-up'} text-light small`
+      : 'bi bi-arrow-down-up text-secondary small';
+  });
+}
+
+function setSort(col) {
+  sortDir = sortCol === col ? -sortDir : -1;
+  sortCol = col;
+  renderTable(allJobs);
+  updateSortIcons();
+}
 
 async function loadJobs() {
   const [jobs, stats] = await Promise.all([
@@ -136,6 +175,7 @@ async function loadJobs() {
     fetch('/api/stats').then(r => r.json()),
   ]);
 
+  allJobs = jobs;
   renderStats(stats, jobs);
   renderKanban(jobs);
   renderTable(jobs);
@@ -208,21 +248,22 @@ function renderKanban(jobs) {
 
 function renderTable(jobs) {
   const tbody = document.getElementById('table-body');
-  tbody.innerHTML = jobs.map(j => {
+  tbody.innerHTML = sortedJobs(jobs).map(j => {
     const score = j.match_score || 0;
     return `<tr data-company="${j.company_name}" data-title="${j.job_title}" data-status="${j.status}">
       <td>${j.company_name}</td>
       <td>${j.job_title}</td>
       <td><span class="badge" style="background:${scoreColor(score)}">${score}%</span></td>
-      <td><span class="badge bg-secondary">${j.status}</span></td>
+      <td><span class="badge ${statusColor(j.status)}">${j.status}</span></td>
       <td class="text-secondary small">${j.location || '—'}</td>
-      <td class="text-secondary small">${fmtDate(j.applied_date)}</td>
+      <td class="text-secondary small">${fmtDate(j.scraped_date)}</td>
       <td><a href="/jobs/${j.id}" class="btn btn-sm btn-outline-secondary py-0">View</a></td>
     </tr>`;
   }).join('');
 
   document.getElementById('table-filter').oninput = filterTable;
   document.getElementById('status-filter').onchange = filterTable;
+  updateSortIcons();
 }
 
 function filterTable() {
