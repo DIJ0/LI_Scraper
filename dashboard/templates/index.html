@@ -130,14 +130,14 @@ const scoreColor  = s => s >= 80 ? '#198754' : s >= 60 ? '#ffc107' : '#dc3545';
 const scoreIcon   = s => s >= 80 ? '🟢' : s >= 60 ? '🟡' : '🔴';
 const fmtDate     = d => d ? d.slice(0, 10) : '—';
 const statusColor = s => ({
-  'Applied':      'bg-primary',
-  'Phone Screen': 'bg-info text-dark',
-  'Interview':    'bg-warning text-dark',
-  'Offer':        'bg-success',
-  'Rejected':     'bg-secondary',
-  'Ghosted':      'bg-secondary',
-  'Archived':     'bg-danger',
-}[s] || 'bg-secondary');
+  'Applied':      '#0d6efd',
+  'Phone Screen': '#0891b2',
+  'Interview':    '#b45309',
+  'Offer':        '#198754',
+  'Rejected':     '#6b0f1a',
+  'Ghosted':      '#9b2335',
+  'Archived':     '#dc3545',
+}[s] || '#6c757d');
 
 let allJobs = [];
 let sortCol = 'date', sortDir = -1;
@@ -254,7 +254,7 @@ function renderTable(jobs) {
       <td>${j.company_name}</td>
       <td>${j.job_title}</td>
       <td><span class="badge" style="background:${scoreColor(score)}">${score}%</span></td>
-      <td><span class="badge ${statusColor(j.status)}">${j.status}</span></td>
+      <td><span class="badge" style="background:${statusColor(j.status)}">${j.status}</span></td>
       <td class="text-secondary small">${j.location || '—'}</td>
       <td class="text-secondary small">${fmtDate(j.scraped_date)}</td>
       <td><a href="/jobs/${j.id}" class="btn btn-sm btn-outline-secondary py-0">View</a></td>
