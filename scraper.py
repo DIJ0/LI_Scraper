@@ -1,6 +1,7 @@
 import json
 import asyncio
 import random
+from urllib.parse import urlparse, parse_qs
 from playwright.async_api import async_playwright, Page, BrowserContext
 
 from config import (
@@ -63,7 +64,12 @@ async def _extract_job_card(page: Page, card) -> dict | None:
         await card.click()
         await _pause(1.5, 3.0)
 
-        job_id = await card.get_attribute("data-job-id") or ""
+        raw_id = await card.get_attribute("data-job-id") or ""
+        # data-job-id is sometimes missing/wrong on remote results — fall back to URL
+        if not raw_id.isdigit():
+            params = parse_qs(urlparse(page.url).query)
+            raw_id = params.get("currentJobId", [""])[0]
+        job_id = raw_id
 
         try:
             title = await page.locator(
