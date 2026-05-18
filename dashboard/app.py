@@ -10,7 +10,7 @@ from config import GENERATED_CVS_DIR, DASHBOARD_HOST, DASHBOARD_PORT
 
 app = Flask(__name__)
 
-STATUSES = ["Scraped", "Applied", "Phone Screen", "Interview", "Offer", "Rejected", "Ghosted"]
+STATUSES = ["Scraped", "Applied", "Phone Screen", "Interview", "Offer", "Rejected", "Ghosted", "Archived"]
 
 
 @app.route("/")
