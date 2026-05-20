@@ -129,7 +129,7 @@ def get_job(job_id: int) -> dict | None:
 def get_stats() -> dict:
     with get_conn() as conn:
         total = conn.execute(
-            "SELECT COUNT(*) FROM jobs WHERE status != 'Scraped'"
+            "SELECT COUNT(*) FROM jobs WHERE status = 'Applied'"
         ).fetchone()[0]
         by_status = conn.execute(
             "SELECT status, COUNT(*) as count FROM jobs GROUP BY status"
