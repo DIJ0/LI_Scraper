@@ -30,13 +30,18 @@ def run():
             scored = score_job(job)
             job["match_score"] = scored["match_score"]
             job["match_notes"] = scored["match_notes"]
+            auto_status = "Archived" if job["match_score"] < 40 else job.get("status", "Scraped")
             update_job(job["id"], {
                 "match_score": job["match_score"],
                 "match_notes": job["match_notes"],
+                "status":      auto_status,
             })
             print(f"   Score: {job['match_score']}%")
         except Exception as e:
             print(f"   Score failed: {e}")
+            continue
+
+        if job["match_score"] < 40:
             continue
 
         # CV rewrite (only if score good enough)

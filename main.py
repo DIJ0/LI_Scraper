@@ -58,10 +58,16 @@ def run():
             job.setdefault("match_score", 0)
             job.setdefault("match_notes", "")
 
+        auto_status = "Archived" if job["match_score"] < 40 else "Scraped"
         update_job(db_id, {
             "match_score": job["match_score"],
             "match_notes": job["match_notes"],
+            "status":      auto_status,
         })
+
+        if auto_status == "Archived":
+            print(f"  Score {job['match_score']}% < 40% -- archived")
+            continue
 
         # ── Step 2: rewrite CV only if score is good enough ───────────────────
         if job["match_score"] >= CV_REWRITE_THRESHOLD:
