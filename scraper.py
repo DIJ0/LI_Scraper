@@ -105,13 +105,6 @@ async def _extract_job_card(page: Page, card) -> dict | None:
         except Exception:
             description = ""
 
-        try:
-            salary = await page.locator(
-                ".compensation__salary-range"
-            ).inner_text(timeout=2000)
-        except Exception:
-            salary = ""
-
         loc_lower = location.lower()
         remote_type = (
             "Remote"  if "remote"  in loc_lower else
@@ -125,7 +118,6 @@ async def _extract_job_card(page: Page, card) -> dict | None:
             "company_name":    company.strip(),
             "location":        location.strip()[:200],
             "remote_type":     remote_type,
-            "salary_range":    salary.strip(),
             "job_description": description.strip(),
             "job_url":         page.url,
         }

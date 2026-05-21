@@ -130,10 +130,9 @@ COMPANY: {job.get('company_name', '')}
 ROLE: {job.get('job_title', '')}
 
 Rules:
-- 3 short paragraphs max
-- First paragraph: why this specific role/company is interesting
-- Second paragraph: 2-3 most relevant strengths backed by the CV
-- Third paragraph: short closing, call to action
+- 1-2 short paragraphs max
+- First paragraph: why this specific role/company is interesting + 1-2 most relevant strengths backed by the CV
+- Optional second paragraph: short closing with call to action (only if needed)
 - Professional but natural tone — not robotic
 - Do NOT include subject line, date, address headers, or signature
 - Output the letter text only, nothing else""",

@@ -36,8 +36,7 @@
         <div class="row g-2 text-secondary small mb-3">
           <div class="col-auto"><i class="bi bi-geo-alt me-1"></i>{{ job.location or '—' }}</div>
           <div class="col-auto"><i class="bi bi-laptop me-1"></i>{{ job.remote_type or '—' }}</div>
-          <div class="col-auto"><i class="bi bi-cash me-1"></i>{{ job.salary_range or 'Salary not listed' }}</div>
-          <div class="col-auto"><i class="bi bi-calendar me-1"></i>Scraped {{ job.scraped_date[:10] if job.scraped_date else '—' }}</div>
+<div class="col-auto"><i class="bi bi-calendar me-1"></i>Scraped {{ job.scraped_date[:10] if job.scraped_date else '—' }}</div>
         </div>
 
         <a href="{{ job.job_url }}" target="_blank" class="btn btn-sm btn-outline-primary me-2">

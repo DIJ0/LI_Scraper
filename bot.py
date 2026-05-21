@@ -26,13 +26,11 @@ def send_document(file_path: str, caption: str = ""):
 
 def notify_new_job(job: dict, cv_path: str = ""):
     score = job.get("match_score", 0)
-    score_bar = "🟢" if score >= 85 else ("🟡" if score >= 65 else "🔴")
+    score_bar = "🟢" if score >= 80 else ("🟡" if score >= 60 else "🔴")
     msg = (
         f"{score_bar} <b>New Job Match — {score}%</b>\n\n"
         f"<b>{job['job_title']}</b> @ {job['company_name']}\n"
-        f"📍 {job.get('location', 'N/A')}  |  {job.get('remote_type', '')}\n"
-        f"💰 {job.get('salary_range') or 'Salary not listed'}\n\n"
-        f"<i>{job.get('match_notes', '')}</i>\n\n"
+        f"📍 {job.get('location', 'N/A')}  |  {job.get('remote_type', '')}\n\n"
         f"🔗 <a href=\"{job['job_url']}\">View on LinkedIn</a>"
     )
     send_message(msg)
